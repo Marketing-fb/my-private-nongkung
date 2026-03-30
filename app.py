@@ -1,29 +1,42 @@
 import google.generativeai as genai
 import gradio as gr
 
-# 1. วางรหัส API Key ของคุณตรงนี้ (อย่าลืมเครื่องหมายคำพูดนะครับ)
+# 1. วางรหัส API Key ของคุณที่นี่
 MY_API_KEY = "AIzaSyBoy_pQkFkyUBbPBPsy1PNDqoddKTesLK0"
 
 genai.configure(api_key=MY_API_KEY)
 
+def get_working_model():
+    # ระบบจะพยายามหารุ่นที่ใช้ได้จริงในเครื่องคุณ
+    available_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
+    # ลำดับความฉลาดที่เราต้องการ
+    preference = ['models/gemini-1.5-flash', 'models/gemini-1.5-pro', 'models/gemini-pro']
+    
+    for p in preference:
+        if p in available_models:
+            return p
+    return available_models[0] if available_models else None
+
 def chat_fn(message, history):
-    # ใช้รุ่น gemini-pro เพราะเป็นรุ่นมาตรฐานที่เข้าถึงได้ทุกคนครับ
     try:
-        model = genai.GenerativeModel('gemini-pro')
-        # ใส่คำสั่งเบื้องหลังแบบง่ายๆ
-        full_prompt = f"คุณคือน้องกุ้ง แอดมินขายหญ้าและจัดสวน ตอบคำถามนี้อย่างสุภาพ: {message}"
-        response = model.generate_content(full_prompt)
+        target_model = get_working_model()
+        if not target_model:
+            return "ไม่พบสมอง AI ที่ใช้งานได้ กรุณาเช็ค API Key ครับ"
+            
+        model = genai.GenerativeModel(target_model)
+        prompt = f"คุณคือน้องกุ้ง แอดมินขายหญ้าและจัดสวน (ใช้รุ่น: {target_model}) ตอบลูกค้าอย่างสุภาพ: {message}"
+        response = model.generate_content(prompt)
         return response.text
     except Exception as e:
-        return f"ขออภัยครับ เกิดปัญหา: {str(e)}"
+        return f"เกิดข้อผิดพลาด: {str(e)}"
 
-# 2. สร้างหน้าจอแชท และเปิดโหมด Share
+# 2. สร้างหน้าจอแชท
 demo = gr.ChatInterface(
     fn=chat_fn, 
-    title="Nong Kung AI (Stable Version)",
-    theme="soft"
+    title="Nong Kung AI (Auto-Select Mode)",
+    description="ระบบจะเลือกสมอง AI ที่ดีที่สุดให้คุณอัตโนมัติ"
 )
 
 if __name__ == "__main__":
-    # share=True จะช่วยสร้างลิงก์พิเศษที่ใช้งานได้แน่นอน
+    # เปิดโหมด Share เพื่อให้ได้ลิงก์ .gradio.live
     demo.launch(share=True)
