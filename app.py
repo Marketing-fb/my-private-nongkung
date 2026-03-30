@@ -1,35 +1,30 @@
 import google.generativeai as genai
 import gradio as gr
 
-# 1. ใส่รหัส API Key ของคุณที่นี่
+# 1. วางรหัส API Key ของคุณตรงนี้
 MY_API_KEY = "AIzaSyBoy_pQkFkyUBbPBPsy1PNDqoddKTesLK0"
 
 genai.configure(api_key=MY_API_KEY)
 
-# 2. ตั้งค่าข้อมูลน้องกุ้ง
-SYSTEM_PROMPT = "คุณคือแอดมินน้องกุ้ง ตอบคำถามเรื่องหญ้าและจัดสวนอย่างสุภาพครับ"
-
-def chat_function(message, history):
-    try:
-        # เราจะลองใช้ gemini-1.5-flash-latest ซึ่งเป็นชื่อที่แน่นอนที่สุด
-        model = genai.GenerativeModel(
-            model_name='gemini-1.5-flash-latest', 
-            system_instruction=SYSTEM_PROMPT
-        )
-        response = model.generate_content(message)
-        return response.text
-    except Exception as e:
-        # ถ้ายังพังอีก ให้ลองใช้รุ่น 1.0 Pro (รุ่นมาตรฐาน) เป็นตัวสำรอง
+def chat_fn(message, history):
+    # รายชื่อโมเดลที่ต้องการลองใช้ (เรียงจากใหม่ไปเก่า)
+    model_names = ['gemini-1.5-flash', 'models/gemini-1.5-flash', 'gemini-pro']
+    
+    error_msg = ""
+    for name in model_names:
         try:
-            model_backup = genai.GenerativeModel('gemini-pro')
-            response = model_backup.generate_content(f"{SYSTEM_PROMPT}\n\nคำถามจากลูกค้า: {message}")
+            model = genai.GenerativeModel(name)
+            response = model.generate_content(message)
             return response.text
-        except:
-            return f"ระบบยังมีปัญหา: {str(e)}"
+        except Exception as e:
+            error_msg = str(e)
+            continue # ถ้าพัง ให้ลองรุ่นถัดไป
+            
+    return f"พยายามทุกรุ่นแล้วแต่ยังไม่ได้: {error_msg}"
 
-# 3. สร้างหน้าแชท
-demo = gr.ChatInterface(fn=chat_function, title="Nong Kung Private AI")
+# สร้างหน้าจอแชท
+demo = gr.ChatInterface(fn=chat_fn, title="Nong Kung Private AI (Debug Mode)")
 
 if __name__ == "__main__":
-    # ใช้ share=True เพื่อความชัวร์ จะได้ลิงก์ .gradio.live มาใช้
+    # ใช้ share=True เพื่อให้ได้ลิงก์ .gradio.live ซึ่งเสถียรกว่าใน Codespaces
     demo.launch(share=True)
