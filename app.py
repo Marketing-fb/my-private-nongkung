@@ -9,7 +9,7 @@ client = genai.Client(api_key=MY_API_KEY)
 
 def chat_fn(message, history):
     try:
-        # ใช้รุ่น gemini-1.5-flash ผ่านระบบใหม่
+        # ใช้รุ่น gemini-1.5-flash ผ่านระบบใหม่ล่าสุด
         response = client.models.generate_content(
             model="gemini-1.5-flash",
             contents=message,
@@ -25,5 +25,5 @@ def chat_fn(message, history):
 demo = gr.ChatInterface(fn=chat_fn, title="Nong Kung AI (New System)")
 
 if __name__ == "__main__":
-    # ตั้งค่า share=True เพื่อให้ได้ลิงก์ .gradio.live
+    # ตั้งค่า share=True เพื่อให้ได้ลิงก์ .gradio.live ทันที
     demo.launch(share=True)
